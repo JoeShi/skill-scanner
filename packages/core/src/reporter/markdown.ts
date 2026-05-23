@@ -1,5 +1,5 @@
 import { Reporter } from './types';
-import { ScanResult, isBlocked } from '../types';
+import { ScanResult } from '../types';
 
 export class MarkdownReporter implements Reporter {
   name = 'markdown';
