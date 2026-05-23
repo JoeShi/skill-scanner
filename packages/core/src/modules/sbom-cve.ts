@@ -105,6 +105,7 @@ export class SbomCveModule implements ScannerModule {
           recommendation: adv.patched_versions === 'available'
             ? `Run npm audit fix or upgrade ${adv.module_name}`
             : `Monitor for patch availability; consider removing ${adv.module_name}`,
+          ruleOrigin: 'core',
         });
       }
     } catch (err) {
@@ -118,6 +119,7 @@ export class SbomCveModule implements ScannerModule {
         category: 'supply-chain-poisoning',
         evidence: String(err),
         recommendation: 'Ensure Node.js and npm are available in PATH',
+        ruleOrigin: 'core',
       });
     }
 

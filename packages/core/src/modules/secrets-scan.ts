@@ -66,6 +66,7 @@ export class SecretsScanModule implements ScannerModule {
               category: 'malicious-code',
               evidence: match.substring(0, 40),
               recommendation: 'Remove hardcoded secrets; use @quickport/orchestrator/credentials/* API',
+              ruleOrigin: 'core',
             });
           }
         }

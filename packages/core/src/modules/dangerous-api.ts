@@ -122,6 +122,7 @@ export class DangerousApiModule implements ScannerModule {
               category: pattern.category as any,
               evidence: match.substring(0, 80),
               recommendation: pattern.recommendation,
+              ruleOrigin: 'core',
             });
           }
         }

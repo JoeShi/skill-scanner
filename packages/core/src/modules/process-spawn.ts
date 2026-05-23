@@ -46,6 +46,7 @@ export class ProcessSpawnModule implements ScannerModule {
               category: 'malicious-code',
               evidence: matches[i].trim(),
               recommendation: 'Declare in manifest.capabilities.process.spawn or remove; only the official orchestrator may spawn processes',
+              ruleOrigin: 'core',
             });
           }
         }

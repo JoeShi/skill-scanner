@@ -145,6 +145,7 @@ function parseSemgrepOutput(
       column: r.start?.col,
       category: determineCategory(ruleId) as any,
       evidence: r.extra?.lines?.trim(),
+      ruleOrigin: 'core',
     };
     findings.push(finding);
   }

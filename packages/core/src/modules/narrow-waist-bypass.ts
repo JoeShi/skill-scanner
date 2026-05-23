@@ -148,6 +148,7 @@ function checkFile(
           category: pattern.category as any,
           evidence: match.substring(0, 80),
           recommendation: pattern.recommendation,
+          ruleOrigin: 'core',
         });
       }
     }

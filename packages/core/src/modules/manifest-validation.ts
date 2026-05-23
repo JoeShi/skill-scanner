@@ -23,6 +23,7 @@ export class ManifestValidationModule implements ScannerModule {
         file: 'manifest.json',
         category: 'malicious-code',
         recommendation: 'Fix manifest.json to comply with required schema',
+        ruleOrigin: 'core',
       });
     }
 
@@ -37,6 +38,7 @@ export class ManifestValidationModule implements ScannerModule {
         file: 'manifest.json',
         category: 'privilege-escalation',
         recommendation: 'Add capabilities section to manifest.json',
+        ruleOrigin: 'core',
       });
     }
 
@@ -52,6 +54,7 @@ export class ManifestValidationModule implements ScannerModule {
         file: 'manifest.json',
         category: 'privilege-escalation',
         recommendation: 'Set capabilities.credentials.via to "install-orchestrator"',
+        ruleOrigin: 'core',
       });
     }
 

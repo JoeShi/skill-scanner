@@ -109,6 +109,7 @@ export class FsDiffModule implements ScannerModule {
             category: 'privilege-escalation',
             evidence: w.path,
             recommendation: `Avoid writing to ${w.path}. Use ~/.quickwork/quickport/skills/${ctx.skillName}/ instead`,
+            ruleOrigin: 'core',
           });
         } else if (isOutsideSkillDir(w.path, ctx.skillName)) {
           findings.push({
@@ -122,6 +123,7 @@ export class FsDiffModule implements ScannerModule {
             category: 'privilege-escalation',
             evidence: w.path,
             recommendation: `Write to ~/.quickwork/quickport/skills/${ctx.skillName}/ or declare in manifest.capabilities.fs.write`,
+            ruleOrigin: 'core',
           });
         }
       }
@@ -141,6 +143,7 @@ export class FsDiffModule implements ScannerModule {
             category: 'privilege-escalation',
             evidence: r.path,
             recommendation: `Avoid reading ${r.path} unless explicitly declared in manifest.capabilities.fs.read`,
+            ruleOrigin: 'core',
           });
         }
       }

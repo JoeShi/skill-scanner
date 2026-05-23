@@ -11,6 +11,7 @@ import {
   ScanResult,
   ScanFinding,
   ScannerModule,
+  RulesetMeta,
 } from './types';
 import { parseManifestWithRaw } from './manifest';
 import { ManifestValidationModule } from './modules/manifest-validation';
@@ -65,6 +66,7 @@ export class ScannerEngine {
           message: `Scanner module "${mod.name}" crashed: ${err}`,
           category: 'malicious-code',
           evidence: String(err),
+          ruleOrigin: 'core',
         });
       }
     }
@@ -86,10 +88,19 @@ export class ScannerEngine {
       decision = 'requires-user-consent';
     }
 
+    const coreRulesetMeta: RulesetMeta = {
+      source: 'core',
+      version: SCANNER_VERSION,
+      hash: '',
+      signatureStatus: 'unsigned',
+      trustPolicy: 'allow',
+    };
+
     const result: ScanResult = {
       eventId: randomUUID(),
       skillName: manifest.name || skillName,
       skillVersion: manifest.version || 'unknown',
+      rulesetMeta: [coreRulesetMeta],
       findings,
       summary,
       durationMs,
