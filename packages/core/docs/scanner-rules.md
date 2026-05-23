@@ -25,7 +25,7 @@ This document is the canonical rule definition for `@skill-scanner/core`. Both
    constraints (HF-1/2/4/5/6 in QuickPort) are dropped here; HF-3/3'F/7/8/9
    become detection dimensions.
 
-## Rule index (R0-R11)
+## Rule index (R0-R13)
 
 | ID | Name | Severity baseline | Source language |
 |---|---|---|---|
@@ -41,11 +41,85 @@ This document is the canonical rule definition for `@skill-scanner/core`. Both
 | R9 | Capability completeness (over-claim detection) | P1 | js / ts / py |
 | R10 | Skill version freshness (re-scan on bump) | n/a (gate) | metadata |
 | R11 | MCP `server.listOfferings()` diff (deferred) | TBD | runtime |
+| **R12** | **Manifest installer-type whitelist** (ClawHub `installer.type`) | **P0** | **manifest** |
+| **R13** | **Manifest env override block** (sensitive env vars) | **P0** | **manifest** |
 
 > **Per-rule sections** (R0-R11) are stubs and will be filled in follow-up
 > commits matching QuickPort `notes/quickwork-scanner-rules-draft.md` v0
 > verbatim, with `@quickport/orchestrator/*` allowlist references replaced
 > with `@skill-scanner/core/*` and observer-mode framing.
+
+### R12 — Manifest installer-type whitelist
+
+**Why**: ClawHub SKILL.md frontmatter has an `installer` field that lets a
+skill author declare how the skill should be installed. Several values
+(`direct-exec`, `shell`, `binary`) tell the host to run a binary or shell
+script outside the orchestrator-managed spawn path. That bypass undoes
+HF-7 (stdio child_process whitelist — only `mcp-spawner` may spawn) and
+HF-3'F (OS sandbox profile applied at spawn time).
+
+**Detection**: parse normalized `manifest.installer.type`. Allowed values:
+
+```
+'orchestrator-managed'   — explicit opt-in to the narrow waist
+undefined / missing       — implicit (legacy skills.sh skills with no
+                            installer field; default-safe interpretation)
+```
+
+Any other value (including `'direct-exec'`, `'shell'`, `'binary'`,
+`'native'`, etc.) → **`blocker P0 [critical:security] ref:skill-<name>#R12`**.
+
+**Example violation**:
+
+```yaml
+# malicious SKILL.md frontmatter
+installer:
+  type: direct-exec        # ← R12 P0 blocker
+  command: ./run.sh
+```
+
+**Recommendation in finding**:
+> "Use `installer.type: orchestrator-managed` (or omit the field). Direct
+> exec / shell / binary installers bypass the spawn whitelist (HF-7) and
+> the OS sandbox profile (HF-3'F)."
+
+**Source**: Slock #skill-security-scanner msg 76371f3c (Jack) +
+Gatekeeper R0/R5 extension proposal in 4d09de0e.
+
+### R13 — Manifest `env` sensitive-key block
+
+**Why**: ClawHub SKILL.md `env` field lets a skill author inject
+environment variables into the spawned process. Several keys allow
+arbitrary code execution at process startup or hijack module resolution:
+
+| Key family | Attack |
+|---|---|
+| `PATH` | Reorder `$PATH` so attacker-controlled binary shadows real ones (e.g. fake `git` |
+| `LD_PRELOAD`, `LD_LIBRARY_PATH` | (Linux) load attacker .so on every dynamic-linker invocation |
+| `DYLD_INSERT_LIBRARIES`, `DYLD_LIBRARY_PATH`, `DYLD_FRAMEWORK_PATH` | (macOS) same as LD_PRELOAD; ignored when running under SIP but skill-scanner's host process is rarely SIP-protected |
+| `NODE_OPTIONS` | inject `--require=./payload.js` to run code on every Node spawn |
+| `PYTHONPATH`, `PYTHONSTARTUP` | shadow modules and run code on Python startup |
+| `JAVA_TOOL_OPTIONS`, `_JAVA_OPTIONS` | inject `-javaagent:/path/to/agent.jar` |
+| `RUBYOPT` | inject `-r./payload` |
+| `PERL5OPT` | inject `-Mevil` |
+
+**Detection**: parse normalized `manifest.env` (Record<string, string>).
+For every key in the manifest, check membership in the sensitive-key
+block list above. Any match → **`blocker P0 [critical:security]
+ref:skill-<name>#R13`**.
+
+**Per-key recommendation in finding**:
+> "Override of `<KEY>` in skill manifest is blocked — this variable is a
+> known code-execution / module-shadowing vector. Move the value into
+> the skill's own runtime config or document it as a host-side
+> requirement instead."
+
+**Note on case sensitivity**: env var names are case-sensitive on POSIX
+(Linux/macOS) and case-insensitive on Windows. The block check should be
+case-insensitive to catch `path` / `Path` / `PATH` uniformly.
+
+**Source**: Slock #skill-security-scanner msg 76371f3c (Jack) +
+Gatekeeper R0/R5 extension proposal in 4d09de0e.
 
 ## ScanReport canonical interface (v1.1)
 
@@ -91,10 +165,29 @@ auto-generated trade-off section in the signed report when user passes
 | HF | QuickPort role | skill-scanner role |
 |---|---|---|
 | HF-1 / 2 / 4 / 5 / 6 | governor enforce | **drop** (CLI doesn't hold tokens / write keychain / write audit) |
-| HF-3 / 3'F | governor enforce | **observe**: scan for `child_process.spawn` outside explicit sandbox wrapping |
-| HF-7 | governor enforce | **observe**: scan for skill code attempting MCP spawn outside allowed paths |
+| HF-3 / 3'F | governor enforce | **observe**: scan for `child_process.spawn` outside explicit sandbox wrapping (R3 + **R12** + **R13**) |
+| HF-7 | governor enforce | **observe**: scan for skill code attempting MCP spawn outside allowed paths (R3 + **R12**) |
 | HF-8 | governor enforce | **observe**: scan manifest for binary integrity hash + verify if shipped |
 | HF-9 | governor enforce | **observe**: OAuth scope over-claim detection (manifest declares > actual usage) |
+
+R12 + R13 are the manifest-declarative half of HF-7 / HF-3'F: they catch
+skills whose author tries to declare their way out of the spawn whitelist
+or the sandbox profile. R3 catches the same intent at the code level
+(actual `child_process.spawn` calls); R12/R13 catch it earlier, in
+metadata.
+
+## R12 / R13 implementation note
+
+Both R12 and R13 operate on the **normalized** `SkillManifest` produced by
+the marketplace adapter (per Rex marketplace spec v0.1 §3 + KimiCoder
+07b603b1 manifest-normalize gap). Implementation is straightforward
+manifest-level checks once the adapter populates `installer.type` and
+`env` consistently across skills.sh / ClawHub.
+
+Owner: Jack (per 156a50a4 commitment) — extends
+`packages/core/src/modules/manifest-validation.ts`. Trigger: KimiCoder
+ships normalized `SkillManifest` (07b603b1 #2 / #3) + ClawHub adapter
+populates the `installer` and `env` fields from frontmatter.
 
 ## TODO (follow-up PRs)
 
