@@ -13,6 +13,17 @@ export type ThreatCategory =
   | 'privilege-escalation'
   | 'supply-chain-poisoning';
 
+/**
+ * `rule_origin` distinguishes core rules (shipped in `@skill-scanner/core`)
+ * from user-supplied custom rules. Per Slock #skill-security-scanner msg
+ * 41b39e76 (Gatekeeper) §C2.
+ *
+ * Core rules can never be impersonated by custom rules — the loader
+ * rewrites any `'core'` literal coming from a user-supplied file to
+ * `custom:<path>`.
+ */
+export type RuleOrigin = 'core' | `custom:${string}`;
+
 export interface ScanFinding {
   /** Rule ID, e.g., "R3-manifest-integrity" */
   ruleId: string;
@@ -36,6 +47,17 @@ export interface ScanFinding {
   evidence?: string;
   /** Recommended fix or mitigation */
   recommendation?: string;
+  /**
+   * Which ruleset the finding came from. Optional today (existing scanner
+   * modules emit findings without it); the ruleset-loader stamps it in
+   * future iterations. Per Gatekeeper 41b39e76 §C2.
+   */
+  ruleOrigin?: RuleOrigin;
+  /**
+   * Trace anchor in the form `skill-<name>#<rule-id>` — grep-able across
+   * audit chain (per v0.1 review protocol).
+   */
+  ref?: string;
 }
 
 export interface SkillManifest {
@@ -120,4 +142,37 @@ export interface ScannerModule {
   name: string;
   /** Run the scan module */
   scan(ctx: ScanContext): Promise<ScanFinding[]> | ScanFinding[];
+}
+
+// ─── Custom Ruleset extensibility (Gatekeeper PR #1 spec → impl PR #N) ────
+
+/**
+ * Custom ruleset trust policy — gates loading of user-supplied rules.
+ * Per Slock #skill-security-scanner msg dab0ea89 (Arch) + 41b39e76
+ * (Gatekeeper) §C4.
+ */
+export type RulesetTrustPolicy = 'signed' | 'warn' | 'allow';
+
+/** Default trust policy for v1 — unsigned ruleset loads but emits warning. */
+export const DEFAULT_RULESET_TRUST_POLICY: RulesetTrustPolicy = 'warn';
+
+/**
+ * Metadata about a single ruleset that contributed to a scan.
+ *
+ * The `source` field uses the same `'core' | 'custom:<path>'` discriminant
+ * as `RuleOrigin`, so downstream consumers can join `ScanFinding.ruleOrigin`
+ * to the contributing `RulesetMeta` entry.
+ *
+ * Per Slock #skill-security-scanner msg 41b39e76 (Gatekeeper) — full ruleset
+ * trace, no implicit trust.
+ */
+export interface RulesetMeta {
+  /** `'core'` for the built-in ruleset, absolute path for custom rulesets. */
+  source: 'core' | string;
+  version: string;
+  hash: string;
+  signatureStatus: 'verified' | 'unverified' | 'unsigned';
+  trustPolicy: RulesetTrustPolicy;
+  /** How many findings this ruleset contributed to the scan. */
+  findingsContributed?: number;
 }
