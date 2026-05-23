@@ -15,10 +15,7 @@ const INSTALLER_TYPE_ALLOWED = new Set(['orchestrator-managed']);
 
 // R12-bis: shell metacharacters that indicate command injection in installer.command
 // Ordered: multi-char operators first for better evidence reporting
-const COMMAND_METACHAR_RE = /&&|\|\||\$\(|[;`><|&\\]/;
-
-// R12-bis: known safe first-token interpreters for installer.command
-const COMMAND_ALLOWED_FIRST_TOKENS = new Set(['node', 'python', 'python3', 'sh', 'bash', 'pwsh']);
+const COMMAND_METACHAR_RE = /&&|\|\||\$\(|>>|<<|[;`><|&\\]/;
 
 const R12BIS_RECOMMENDATION =
   'installer.command / .script must be a benign invocation. ' +

