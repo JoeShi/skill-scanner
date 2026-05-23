@@ -9,7 +9,10 @@ import * as os from 'os';
 import https from 'https';
 import { MarketplaceSource, FetchedSkill, FetchOptions } from './types';
 
+// v0.1: API base may redirect between .com and .ai — adapter follows redirects
+// with a safety limit. Update this constant once the canonical endpoint stabilizes.
 const CLAWHUB_API_BASE = 'https://clawdhub.com/api/v1';
+const MAX_REDIRECTS = 5;
 
 export class ClawHubAdapter implements MarketplaceSource {
   name = 'clawhub';
@@ -17,6 +20,7 @@ export class ClawHubAdapter implements MarketplaceSource {
   canHandle(url: string): boolean {
     return (
       url.startsWith('https://clawdhub.com/') ||
+      url.startsWith('https://clawdhub.ai/') ||
       url.startsWith('https://github.com/openclaw/') ||
       /^[a-z0-9-]+$/i.test(url) // Simple slug like "my-skill"
     );
@@ -80,7 +84,7 @@ export class ClawHubAdapter implements MarketplaceSource {
   }
 
   private extractSlug(url: string): string {
-    if (url.startsWith('https://clawdhub.com/skills/')) {
+    if (url.startsWith('https://clawdhub.com/skills/') || url.startsWith('https://clawdhub.ai/skills/')) {
       const match = url.match(/\/skills\/([^/?]+)/);
       return match ? match[1] : url;
     }
@@ -92,62 +96,76 @@ export class ClawHubAdapter implements MarketplaceSource {
   }
 
   private async apiGet(endpoint: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const url = `${CLAWHUB_API_BASE}${endpoint}`;
-      https
-        .get(url, { headers: { 'User-Agent': 'skill-scanner/0.1.0' } }, (res) => {
-          let data = '';
-          res.on('data', (chunk) => (data += chunk));
-          res.on('end', () => {
-            try {
-              resolve(JSON.parse(data));
-            } catch {
-              reject(new Error(`Invalid JSON from ${url}`));
-            }
-          });
-        })
-        .on('error', reject)
-        .setTimeout(15000, () => reject(new Error(`Timeout: ${url}`)));
-    });
+    const url = `${CLAWHUB_API_BASE}${endpoint}`;
+    const data = await this.httpGet(url);
+    try {
+      return JSON.parse(data);
+    } catch {
+      throw new Error(`Invalid JSON from ${url}`);
+    }
   }
 
-  private async downloadFile(url: string, destDir: string): Promise<void> {
+  /**
+   * HTTP GET with redirect following (up to MAX_REDIRECTS).
+   * Handles 301/302/308 redirects across host changes (.com ↔ .ai).
+   */
+  private httpGet(url: string, redirectCount = 0): Promise<string> {
     return new Promise((resolve, reject) => {
+      if (redirectCount > MAX_REDIRECTS) {
+        reject(new Error(`Too many redirects (> ${MAX_REDIRECTS}) for ${url}`));
+        return;
+      }
+
+      const parsedUrl = new URL(url);
+      const requestOptions = {
+        hostname: parsedUrl.hostname,
+        path: parsedUrl.pathname + parsedUrl.search,
+        method: 'GET',
+        headers: { 'User-Agent': 'skill-scanner/0.1.0' },
+        timeout: 15000,
+      };
+
       https
-        .get(url, { headers: { 'User-Agent': 'skill-scanner/0.1.0' } }, (res) => {
-          if (res.statusCode === 302 || res.statusCode === 301) {
-            // Follow redirect
-            const redirectUrl = res.headers.location;
-            if (redirectUrl) {
-              this.downloadFile(redirectUrl, destDir).then(resolve).catch(reject);
+        .request(requestOptions, (res) => {
+          if (res.statusCode && [301, 302, 308].includes(res.statusCode)) {
+            const loc = res.headers.location;
+            if (loc) {
+              const nextUrl = loc.startsWith('http') ? loc : new URL(loc, url).href;
+              this.httpGet(nextUrl, redirectCount + 1).then(resolve).catch(reject);
               return;
             }
           }
 
-          // For v0.1, assume the file is a tarball or zip
-          // In production, we'd stream to a temp file and extract
           let data = '';
           res.on('data', (chunk) => (data += chunk));
           res.on('end', () => {
-            try {
-              const files = JSON.parse(data);
-              // Write files to destDir
-              for (const [filePath, content] of Object.entries(files)) {
-                const fullPath = path.join(destDir, filePath);
-                fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-                fs.writeFileSync(fullPath, content as string);
-              }
-              resolve();
-            } catch {
-              // If not JSON, write as single file
-              fs.writeFileSync(path.join(destDir, 'SKILL.md'), data);
-              resolve();
+            if (res.statusCode && res.statusCode >= 400) {
+              reject(new Error(`HTTP ${res.statusCode} from ${url}: ${data.slice(0, 200)}`));
+            } else {
+              resolve(data);
             }
           });
         })
         .on('error', reject)
-        .setTimeout(30000, () => reject(new Error(`Timeout: ${url}`)));
+        .on('timeout', () => reject(new Error(`Timeout: ${url}`)))
+        .end();
     });
+  }
+
+  private async downloadFile(url: string, destDir: string): Promise<void> {
+    const data = await this.httpGet(url);
+    try {
+      const files = JSON.parse(data);
+      // Write files to destDir
+      for (const [filePath, content] of Object.entries(files)) {
+        const fullPath = path.join(destDir, filePath);
+        fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+        fs.writeFileSync(fullPath, content as string);
+      }
+    } catch {
+      // If not JSON, write as single file
+      fs.writeFileSync(path.join(destDir, 'SKILL.md'), data);
+    }
   }
 
   private buildFetchedSkill(
