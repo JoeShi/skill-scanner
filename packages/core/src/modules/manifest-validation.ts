@@ -3,13 +3,27 @@
  * Validates required fields, semver, capabilities schema
  *
  * R12 — installer.type whitelist (ClawHub installer field)
+ * R12-bis — installer.command/script content validation (shell metachar + path containment + first-token policy)
  * R13 — env sensitive-key block (PATH, LD_PRELOAD, DYLD_INSERT_LIBRARIES, NODE_OPTIONS, etc.)
  */
 
+import * as path from 'path';
 import { ScanContext, ScanFinding, ScannerModule } from '../types';
 import { validateManifestStructure } from '../manifest';
 
 const INSTALLER_TYPE_ALLOWED = new Set(['orchestrator-managed']);
+
+// R12-bis: shell metacharacters that indicate command injection in installer.command
+// Ordered: multi-char operators first for better evidence reporting
+const COMMAND_METACHAR_RE = /&&|\|\||\$\(|[;`><|&\\]/;
+
+// R12-bis: known safe first-token interpreters for installer.command
+const COMMAND_ALLOWED_FIRST_TOKENS = new Set(['node', 'python', 'python3', 'sh', 'bash', 'pwsh']);
+
+const R12BIS_RECOMMENDATION =
+  'installer.command / .script must be a benign invocation. ' +
+  'To run multi-step setup, ship a script inside the skill directory and reference it via installer.script: ./setup.sh. ' +
+  'To depend on system tools, declare them in manifest.requirements instead of embedding in installer.command.';
 
 // Case-insensitive block list per Gatekeeper R13 spec + R13 supplement (ELECTRON_RUN_AS_NODE)
 const ENV_BLOCK_LIST = new Set([
@@ -96,6 +110,67 @@ export class ManifestValidationModule implements ScannerModule {
         recommendation: 'Set installer.type to "orchestrator-managed" or omit the installer field entirely.',
         ruleOrigin: 'core',
       });
+    }
+
+    // R12-bis — installer.command / .script content validation
+    const installer = ctx.manifest.installer;
+    if (installer) {
+      const { command, script } = installer;
+
+      if (command !== undefined) {
+        // Check 1: shell metachar injection
+        const metacharMatch = command.match(COMMAND_METACHAR_RE);
+        if (metacharMatch) {
+          findings.push({
+            ruleId: 'R12-bis-command-metachar',
+            tier: 'blocker',
+            severity: 'P0',
+            criticalTag: '[critical:security]',
+            message: `manifest.installer.command contains shell metachar "${metacharMatch[0]}" — arbitrary command injection vector (HF-7 bypass).`,
+            file: 'manifest.json',
+            category: 'privilege-escalation',
+            evidence: `installer.command: ${command}`,
+            recommendation: R12BIS_RECOMMENDATION,
+            ruleOrigin: 'core',
+          });
+        }
+
+        // Check 3: first-token absolute path policy
+        const firstToken = command.trim().split(/\s+/)[0] ?? '';
+        if (firstToken && path.isAbsolute(firstToken)) {
+          findings.push({
+            ruleId: 'R12-bis-command-interpreter',
+            tier: 'blocker',
+            severity: 'P0',
+            criticalTag: '[critical:security]',
+            message: `manifest.installer.command first token "${firstToken}" is an absolute system path — use a known interpreter name (node/python3/sh/bash/pwsh) or a skill-internal relative path instead.`,
+            file: 'manifest.json',
+            category: 'privilege-escalation',
+            evidence: `installer.command: ${command}`,
+            recommendation: R12BIS_RECOMMENDATION,
+            ruleOrigin: 'core',
+          });
+        }
+      }
+
+      if (script !== undefined) {
+        // Check 2: path containment (no traversal, no absolute paths)
+        const normalizedScript = path.normalize(script);
+        if (path.isAbsolute(normalizedScript) || normalizedScript.startsWith('..')) {
+          findings.push({
+            ruleId: 'R12-bis-script-path',
+            tier: 'blocker',
+            severity: 'P0',
+            criticalTag: '[critical:security]',
+            message: `manifest.installer.script "${script}" resolves outside the skill package boundary — path traversal / absolute path injection.`,
+            file: 'manifest.json',
+            category: 'privilege-escalation',
+            evidence: `installer.script: ${script}`,
+            recommendation: R12BIS_RECOMMENDATION,
+            ruleOrigin: 'core',
+          });
+        }
+      }
     }
 
     // R13 — env sensitive-key block (case-insensitive per Windows env semantics)
