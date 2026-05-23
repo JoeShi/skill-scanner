@@ -23,3 +23,14 @@ export * from './marketplace';
 
 // Reporters
 export * from './reporter';
+
+// Custom-ruleset security primitives (Gatekeeper PR — C1 + C3)
+export {
+  validateRuleset,
+  originForLoad,
+  RulesetValidationError,
+  type Rule,
+  type Ruleset,
+  type LoadRulesetOptions,
+} from './ruleset-loader';
+export { mergeFindings, decideFromFindings } from './finding-merge';

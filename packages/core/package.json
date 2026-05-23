@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "yaml": "^2.4.0"
+    "yaml": "^2.4.0",
+    "zod": "^3.23.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",
