@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # create GitHub Release
+      id-token: write  # npm provenance
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm ci
+
+      # Build order: core must come first (CLI and action resolve types from dist/)
+      - run: npm run build --workspace @skill-scanner/core
+      - run: npm run build --workspace @skill-scanner/cli
+      - run: npm run build --workspace @skill-scanner/github-action
+
+      - run: npm test --workspaces --if-present
+
+      - name: Publish @skill-scanner/core
+        run: npm publish --workspace @skill-scanner/core --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish @skill-scanner/cli
+        run: npm publish --workspace @skill-scanner/cli --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub Release
+        # SHA-pinned per supply-chain policy (softprops/action-gh-release v2.0.8)
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8
+        with:
+          body_path: CHANGELOG.md
+          make_latest: true
