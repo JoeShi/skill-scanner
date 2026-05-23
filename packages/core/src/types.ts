@@ -24,6 +24,7 @@ export type ThreatCategory =
  */
 export type RuleOrigin = 'core' | `custom:${string}`;
 
+
 export interface ScanFinding {
   /** Rule ID, e.g., "R3-manifest-integrity" */
   ruleId: string;
@@ -58,6 +59,8 @@ export interface ScanFinding {
    * audit chain (per v0.1 review protocol).
    */
   ref?: string;
+  /** Origins that contributed to this finding after mergeFindings() (C3 audit trail). */
+  mergedFrom?: NonNullable<RuleOrigin>[];
 }
 
 export interface SkillManifest {
@@ -114,6 +117,8 @@ export interface ScanResult {
   eventId: string;
   skillName: string;
   skillVersion: string;
+  /** Metadata for each ruleset used — enables finding provenance trace */
+  rulesetMeta: RulesetMeta[];
   /** Total findings */
   findings: ScanFinding[];
   /** Summary by severity */

@@ -101,6 +101,7 @@ export class NetworkDiffModule implements ScannerModule {
           category: 'data-exfiltration',
           evidence: `Found in: ${hostToFiles.get(host)?.join(', ')}`,
           recommendation: `Add "${host}" to manifest.capabilities.network.domains or remove the network call`,
+          ruleOrigin: 'core',
         });
       }
     }
@@ -117,6 +118,7 @@ export class NetworkDiffModule implements ScannerModule {
           file: 'manifest.json',
           category: 'privilege-escalation',
           recommendation: 'Remove unused domain declaration to follow least privilege',
+          ruleOrigin: 'core',
         });
       }
     }
