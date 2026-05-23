@@ -5,7 +5,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import {
   ScanContext,
   ScanResult,
@@ -88,12 +88,15 @@ export class ScannerEngine {
       decision = 'requires-user-consent';
     }
 
+    const semgrepConfig = path.resolve(process.cwd(), 'tools', 'scanner', 'rules', 'quickwork-semgrep-rules.yml');
+    const semgrepHash = fs.existsSync(semgrepConfig)
+      ? createHash('sha256').update(fs.readFileSync(semgrepConfig)).digest('hex').slice(0, 16)
+      : '';
+
     const coreRulesetMeta: RulesetMeta = {
       source: 'core',
       version: SCANNER_VERSION,
-      hash: '',
-      signatureStatus: 'unsigned',
-      trustPolicy: 'allow',
+      hash: semgrepHash,
     };
 
     const result: ScanResult = {
