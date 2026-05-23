@@ -1,0 +1,26 @@
+{
+  "name": "@skill-scanner/core",
+  "version": "0.1.0",
+  "description": "Core scanner engine for skill-scanner — R0-R11 rules, ScanReport, marketplace-agnostic API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "files": [
+    "dist",
+    "rules"
+  ],
+  "keywords": ["skill-scanner", "security", "mcp", "scanner"],
+  "license": "MIT"
+}

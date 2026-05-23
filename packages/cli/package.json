@@ -1,0 +1,25 @@
+{
+  "name": "@skill-scanner/cli",
+  "version": "0.1.0",
+  "description": "skillchk — CLI binary for scanning agent skill marketplaces",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "bin": {
+    "skillchk": "dist/bin.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "lint": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@skill-scanner/core": "*"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": ["skillchk", "skill-scanner", "security", "mcp", "cli"],
+  "license": "MIT"
+}
