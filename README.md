@@ -130,6 +130,63 @@ skillchk list-marketplaces
 #   - clawhub
 ```
 
+### §4.3 Custom rulesets
+
+`skill-scanner` ships with a built-in ruleset (R0–R13) that runs on every
+scan. Teams with extra policies — internal API allowlists, regulatory
+pattern checks, language-specific lints — can layer their own rules on top
+via `--ruleset`:
+
+```bash
+skillchk scan ./my-skill --ruleset ./company-rules.yml
+```
+
+#### Trust policy
+
+Custom rulesets are gated by `--ruleset-trust-policy`:
+
+| Policy | Behavior | Use case |
+|---|---|---|
+| `warn` (default) | Load unsigned rulesets; emit warning + flag findings as `ruleset_signature: unverified` in the report | OSS / dev workflows |
+| `signed` | Reject any unsigned ruleset; require sigstore / PGP signature | Enterprise / compliance |
+| `allow` | Load anything, no warnings | Local dev / CI sandboxes only |
+
+#### Severity-asymmetry guarantee
+
+A **malicious or buggy custom ruleset cannot weaken core findings**:
+
+- Custom rules can only **upgrade** severity (e.g. core says P2, custom
+  says P0 → finding stays P0)
+- Custom rules **cannot downgrade** severity (e.g. core says P0, custom
+  says P2 → finding stays P0)
+- Findings carry `ruleOrigin: 'core' | 'custom:<path>'` so reports always
+  show the source of every flag — no silent rewrites
+
+The merge is implemented in `@skill-scanner/core/finding-merge`; the
+loader in `@skill-scanner/core/ruleset-loader` rejects custom rules that
+try to claim `ruleOrigin: 'core'` or use punctuation-laden IDs that could
+spoof core rule names.
+
+#### Authoring a custom ruleset
+
+Custom rulesets are Semgrep-compatible YAML. Minimal example:
+
+```yaml
+# company-rules.yml
+rules:
+  - id: r-no-internal-api-leak
+    languages: [javascript, typescript]
+    message: "Skill code references internal API host — must not ship externally."
+    pattern-regex: 'api\.internal\.example\.com'
+    metadata:
+      tier: blocker
+      severity: P0
+      dimension: ['critical:security']
+```
+
+See [`docs/specs/custom-ruleset-security.md`](packages/core/docs/specs/custom-ruleset-security.md)
+for the full schema constraints (C1–C5).
+
 ## §5 Architecture & Design
 
 ### Package layout
@@ -216,9 +273,10 @@ Every finding has:
 | `recommendation` | Actionable fix guidance |
 | `ruleOrigin` | `'core'` or `` `custom:${path}` `` — stamped by the loader |
 
-### Custom rulesets
+### Custom-ruleset security invariants
 
-Pass `--ruleset ./my-rules.js` to extend the core rule set. The loader enforces:
+User-facing usage is documented in [§4.3](#43-custom-rulesets). The architectural
+invariants the loader and merger enforce:
 
 - **C1** — zod schema validation: rejects unknown fields, oversized messages, spoofed rule IDs
 - **C2** — `ruleOrigin` stamping: any `'core'` literal from a user file is rewritten to `` `custom:${path}` ``
