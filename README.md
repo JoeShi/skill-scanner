@@ -130,7 +130,110 @@ skillchk list-marketplaces
 #   - clawhub
 ```
 
-<!-- §5 Architecture & Design — @Jack -->
+## §5 Architecture & Design
+
+### Package layout
+
+```
+skill-scanner/                  (npm workspace root)
+├── packages/
+│   ├── core/                   @skill-scanner/core
+│   │   ├── src/
+│   │   │   ├── engine.ts       scan orchestrator
+│   │   │   ├── types.ts        shared types (ScanFinding, SkillManifest, …)
+│   │   │   ├── manifest.ts     manifest parser + structural validator
+│   │   │   ├── modules/        scanner modules (one file per rule group)
+│   │   │   ├── marketplace/    marketplace adapters (skills.sh, ClawHub, local)
+│   │   │   ├── reporter/       output formatters (terminal, json, markdown, sarif)
+│   │   │   ├── finding-merge.ts  core + custom finding merge (C3 severity policy)
+│   │   │   └── ruleset-loader.ts custom ruleset validator + loader (C1/C2)
+│   ├── cli/                    @skill-scanner/cli  →  skillchk binary
+│   └── action/                 @skill-scanner/github-action
+└── .github/workflows/ci.yml
+```
+
+### Scan pipeline
+
+```
+Target (path / URL)
+      │
+      ▼
+Marketplace Adapter          resolve + fetch skill package
+      │  (skills.sh / ClawHub / local)
+      ▼
+SkillManifest normalizer     parse YAML frontmatter → typed SkillManifest
+      │  (installer, env, capabilities, domains …)
+      ▼
+Scanner Modules              parallel static analysis
+      │  R0  manifest structure + capability declaration
+      │  R1  network domain diff (declared vs actual)
+      │  R2  FS path diff + sensitive paths
+      │  R3  process spawn diff
+      │  R5  narrow-waist bypass (governor API calls)
+      │  R6  hardcoded secrets
+      │  R7  dangerous APIs (eval / vm / shell injection)
+      │  R8  SBOM / CVE (osv-scanner)
+      │  R12 installer.type whitelist
+      │  R12-bis installer.command / script content
+      │  R13 env sensitive-key block
+      ▼
+findingMerge()               merge core findings with custom ruleset findings
+      │  C3: custom rules may upgrade but never downgrade core severity
+      ▼
+decideFromFindings()         P0 → blocked / P1 → requires-user-consent / else → allowed
+      ▼
+Reporter                     render ScanResult in requested format
+      │  terminal / json / markdown / sarif
+      ▼
+Exit code  0 = pass  1 = blocked (at --fail-on threshold)
+```
+
+### Scanner modules
+
+Each module implements `ScannerModule`:
+
+```typescript
+interface ScannerModule {
+  name: string;
+  scan(ctx: ScanContext): Promise<ScanFinding[]> | ScanFinding[];
+}
+```
+
+`ScanContext` carries the normalized `SkillManifest`, raw source files, and extracted skill path. Modules are stateless — the engine runs them against the same context and merges results.
+
+### Finding format
+
+Every finding has:
+
+| Field | Description |
+|---|---|
+| `ruleId` | Machine-readable rule identifier (e.g. `R12-bis-command-metachar`) |
+| `tier` | `blocker` / `suggestion` / `nit` |
+| `severity` | `P0` / `P1` / `P2` |
+| `criticalTag` | `[critical:security]` or `[critical:perf]` |
+| `category` | `malicious-code` / `data-exfiltration` / `privilege-escalation` / `supply-chain-poisoning` |
+| `evidence` | Raw snippet that triggered the finding |
+| `recommendation` | Actionable fix guidance |
+| `ruleOrigin` | `'core'` or `` `custom:${path}` `` — stamped by the loader |
+
+### Custom rulesets
+
+Pass `--ruleset ./my-rules.js` to extend the core rule set. The loader enforces:
+
+- **C1** — zod schema validation: rejects unknown fields, oversized messages, spoofed rule IDs
+- **C2** — `ruleOrigin` stamping: any `'core'` literal from a user file is rewritten to `` `custom:${path}` ``
+- **C3** — severity asymmetry: custom rules may upgrade (P1 → P0) but never downgrade (P0 → P1) a core finding
+- **C4** — trust policy: `signed` / `warn` (default) / `allow`
+
+### Marketplace adapters
+
+| Adapter | Source | How it resolves |
+|---|---|---|
+| `local` | filesystem path | reads directly from disk |
+| `skills-sh` | GitHub URL (`github.com/…/skills/tree/…`) | clones sparse checkout via `git archive` |
+| `clawhub` | ClawHub URL or slug | fetches via ClawHub REST API `/api/v1/skills/{slug}/file` |
+
+All adapters emit a normalized `SkillManifest` so scanner modules are marketplace-agnostic.
 
 <!-- §6 CI / GitHub Action — @Gatekeeper -->
 
