@@ -1,0 +1,51 @@
+# skill-scanner — Recommended Vendor Allowlist (baseline)
+#
+# Source: Slock #skill-security-scanner msg be699dd1 (Rex marketplace adapter
+# spec v0.1, §5).
+#
+# Purpose: this YAML lists *publisher patterns* that the user opts into as a
+# "baseline trusted" set. It is **NOT enforced** — findings from these vendors
+# still surface, and any P0 finding (R5/R6 narrow-waist bypass / hardcoded
+# secrets / etc.) blocks installation regardless of vendor.
+#
+# What an allowed vendor *does* affect (when implemented in v0.x):
+#   - The terminal report's summary section can fold trusted-vendor P2/P1
+#     findings into a single "trusted-vendor low-severity (N findings)"
+#     summary line so users aren't drowned in nits from well-known publishers.
+#   - It does NOT affect P0 reporting, severity merge (C3), audit trail, or
+#     trust-gate enforcement on custom rulesets.
+#
+# How to use (planned CLI surface, not yet wired):
+#   skillchk scan <target> \
+#     --vendor-allowlist examples/vendor-allowlist-recommended.yml
+#
+# How to extend: copy this file and add your own patterns; pass `--vendor-allowlist`
+# pointing at your copy. Patterns use shell-style globs against the publisher
+# segment of the skill identifier as exposed by the marketplace adapter
+# (e.g. for skills.sh GitHub source, the `<owner>` part of `<owner>/<repo>`).
+#
+# v0.x baseline rationale:
+#   - vercel-labs/*  → official maintainer of the skills.sh registry
+#   - openai/*       → OpenAI official skill repos (reference implementations)
+#   - anthropic/*    → Anthropic-published skills (if/when they appear)
+#   - openclaw/*     → maintainer of the ClawHub registry
+#                       (per Rex marketplace spec — NOT Anthropic; ClawHub is
+#                        an OpenClaw community marketplace, fact-corrected in
+#                        timeline doc v0.1.1)
+#
+# IMPORTANT: this file is *recommended*, not authoritative. Do not interpret
+# inclusion as a security guarantee. The actual security posture of each
+# vendor's published skills is enforced by R0-R11 + 9-HF detection
+# regardless of allowlist membership.
+
+vendors:
+  - pattern: "vercel-labs/*"
+    rationale: "Vercel Labs maintains the skills.sh registry"
+    source: "https://github.com/vercel-labs/skills"
+  - pattern: "openai/*"
+    rationale: "OpenAI official skill repos"
+  - pattern: "anthropic/*"
+    rationale: "Anthropic official skills (reserved for future use)"
+  - pattern: "openclaw/*"
+    rationale: "OpenClaw community — ClawHub publisher anchor"
+    source: "https://github.com/openclaw/clawhub"
