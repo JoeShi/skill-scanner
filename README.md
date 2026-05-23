@@ -41,7 +41,7 @@ A full living timeline of 21+ incidents (with attack-vector → R-rule mapping) 
 
 R0 manifest schema · R1 declared-vs-actual network domain · R2 filesystem write boundary · R3 process spawn · R5 install-orchestrator narrow-waist bypass · R6 hardcoded secrets · R7 dangerous APIs (`eval` / shell injection / dynamic `require`) · R8 SBOM CVE · R12 `installer.type` whitelist (no `direct-exec`) · R12-bis `installer.command/script` content validation · R13 `manifest.env` block-list (`PATH` / `LD_PRELOAD` / `NODE_OPTIONS` / `JAVA_TOOL_OPTIONS` / `DYLD_*` / …)
 
-Three-tier finding output: **P0 blocker** (install refused) · **P1 suggestion** (consent + ADR-style trade-off note required) · **P2 nit** (informational).
+Three severity levels — **P0** (install refused) · **P1** (consent + ADR-style trade-off note required) · **P2** (informational) — each paired with a tier classification (`blocker` / `suggestion` / `nit`) on every finding.
 
 ### What `skill-scanner` does **not** cover (honest limits)
 
@@ -455,6 +455,7 @@ Major-version tags follow semver: `v1` tracks the latest `1.x` release.
 - ✅ Reporters: terminal · JSON · markdown · SARIF 2.1.0
 - ✅ GitHub Action + CI workflow
 - ✅ R0–R13 + C1–C5 spec docs
+- ✅ `bin/skillchk` shebang + `npm publish` workflow + GitHub Releases automation
 
 ### v0.2 (next)
 
@@ -464,7 +465,6 @@ Major-version tags follow semver: `v1` tracks the latest `1.x` release.
 - Self-test fixtures — 16 poisoned-skill samples (one per R-rule trigger) + cross-reference into the research-lane timeline
 - ClawHub adapter network hardening — HTTPS-only redirects, SSRF allowlist, response size cap (per Gatekeeper post-merge review)
 - R8 SBOM/CVE module — wire `osv-scanner` integration end-to-end
-- `bin/skillchk` shebang + `npm publish` workflow + GitHub Releases automation
 - README §3 / §4 examples updated against live ClawHub fixtures
 
 ### v1.x (after v0.2)

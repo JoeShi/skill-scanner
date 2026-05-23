@@ -189,6 +189,15 @@ Owner: Jack (per 156a50a4 commitment) — extends
 ships normalized `SkillManifest` (07b603b1 #2 / #3) + ClawHub adapter
 populates the `installer` and `env` fields from frontmatter.
 
+## Known limitations
+
+These are the same four limits listed in the README §2 honest-limits section.
+
+1. **Natural-language prompt injection inside `SKILL.md`** — static analysis cannot detect social-engineering prose embedded in manifest descriptions. arXiv 2604.03081 (2026-05-22) demonstrated that minor edits to `SKILL.md` make agents go rogue. LLM-based semantic review is a v2+ candidate.
+2. **Cross-file taint propagation** — single-file Semgrep patterns will miss dynamically-constructed paths/hosts split across files (e.g. `cmd = base + suffix; exec(cmd)`). Requires `ts-morph` or Semgrep pro-mode post-processor, deferred to v2+.
+3. **Native FFI calls** — calls into OS security frameworks via `node-ffi-napi` or similar are out of regex/AST reach.
+4. **Runtime sandboxing** — the scanner is an *observer*, not a *governor*. It surfaces violations as findings; runtime enforcement (HF-1/2/4/5/6) is the job of the companion installer/orchestrator.
+
 ## TODO (follow-up PRs)
 
 - [ ] Fork R0-R11 per-rule definitions verbatim from QuickPort
