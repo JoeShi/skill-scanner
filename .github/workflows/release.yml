@@ -27,7 +27,7 @@ jobs:
       - run: npm run build --workspace @skill-scanner/cli
       - run: npm run build --workspace @skill-scanner/github-action
 
-      - run: npm test --workspace @skill-scanner/core
+      - run: npm test --workspaces --if-present
 
       - name: Publish @skill-scanner/core
         run: npm publish --workspace @skill-scanner/core --provenance
@@ -40,7 +40,8 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        # SHA-pinned per supply-chain policy (softprops/action-gh-release v2.0.8)
+        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8
         with:
-          generate_release_notes: true
+          body_path: CHANGELOG.md
           make_latest: true
