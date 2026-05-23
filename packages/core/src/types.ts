@@ -65,6 +65,7 @@ export interface ScanFinding {
 
 export interface SkillManifest {
   name: string;
+  /** Semver, required for v1 */
   version: string;
   description?: string;
   /** Declared capabilities */
@@ -79,10 +80,22 @@ export interface SkillManifest {
   dependencies?: Record<string, string>;
   /** Dev dependencies */
   devDependencies?: Record<string, string>;
-  /** Author / publisher */
+  /** Author (legacy, prefer publisher) */
   author?: string;
+  /** Normalized publisher / vendor field (v1) */
+  publisher?: string;
   /** License */
   license?: string;
+  /** Installer configuration (ClawHub frontmatter) */
+  installer?: {
+    /** Installer type whitelist: 'orchestrator-managed' | undefined */
+    type?: string;
+    /** Optional command / script reference */
+    command?: string;
+    script?: string;
+  };
+  /** Environment variable overrides (ClawHub frontmatter) */
+  env?: Record<string, string>;
   /** Raw manifest object for diff scanning */
   [key: string]: unknown;
 }
