@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Build upstream package first — @skill-scanner/action and @skill-scanner/cli
+      # resolve types from dist/, not src/. Without this step, typecheck fails
+      # with "Cannot find module '@skill-scanner/core'".
+      - name: Build @skill-scanner/core
+        run: npm run build --workspace @skill-scanner/core
+
+      - name: Typecheck all workspaces
+        run: npm run typecheck --workspaces
+
+      - name: Test @skill-scanner/core
+        run: npm test --workspace @skill-scanner/core
