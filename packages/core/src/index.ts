@@ -17,3 +17,9 @@ export { SecretsScanModule } from './modules/secrets-scan';
 export { NarrowWaistBypassModule } from './modules/narrow-waist-bypass';
 export { SbomCveModule } from './modules/sbom-cve';
 export { SemgrepScannerModule } from './semgrep-runner';
+
+// Marketplace adapters
+export * from './marketplace';
+
+// Reporters
+export * from './reporter';
