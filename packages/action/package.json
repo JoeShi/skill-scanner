@@ -9,6 +9,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@actions/core": "^1.10.0",
     "@skill-scanner/core": "^0.1.0"
   },
   "devDependencies": {

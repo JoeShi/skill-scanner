@@ -5,4 +5,4 @@ export interface Reporter {
   render(result: ScanResult): string;
 }
 
-export type ReporterFormat = 'terminal' | 'json' | 'markdown';
+export type ReporterFormat = 'terminal' | 'json' | 'markdown' | 'sarif';

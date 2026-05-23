@@ -175,9 +175,12 @@ export interface RulesetMeta {
   /** `'core'` for the built-in ruleset, absolute path for custom rulesets. */
   source: 'core' | string;
   version: string;
+  /** SHA-256 hex digest (first 16 chars) of the ruleset file; '' for built-in core. */
   hash: string;
-  signatureStatus: 'verified' | 'unverified' | 'unsigned';
-  trustPolicy: RulesetTrustPolicy;
+  /** Omitted for built-in core (not loaded through the trust gate). */
+  signatureStatus?: 'verified' | 'unverified' | 'unsigned';
+  /** Omitted for built-in core (not subject to custom-ruleset trust policy). */
+  trustPolicy?: RulesetTrustPolicy;
   /** How many findings this ruleset contributed to the scan. */
   findingsContributed?: number;
 }
