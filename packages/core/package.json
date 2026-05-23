@@ -1,0 +1,25 @@
+{
+  "name": "@skill-scanner/core",
+  "version": "0.1.0",
+  "description": "Skill security scanner engine — R0-R11 static analysis",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "yaml": "^2.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "vitest": "^1.6.0",
+    "@types/node": "^20.0.0"
+  },
+  "files": [
+    "dist",
+    "rules"
+  ],
+  "license": "MIT"
+}
