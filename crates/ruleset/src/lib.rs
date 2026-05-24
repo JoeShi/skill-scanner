@@ -22,6 +22,9 @@ pub fn load_from_path(path: &Path) -> Result<Vec<semgrep::SemgrepRule>, RulesetV
     let rules: Vec<semgrep::SemgrepRule> =
         serde_yaml::from_str(&content).map_err(|e| RulesetValidationError::Yaml { source: e })?;
     for rule in &rules {
+        validators::validate_no_origin_spoof(rule)?;
+        validators::validate_id_format(rule)?;
+        validators::validate_message_length(rule)?;
         validators::reject_template_expansion(rule)?;
     }
     Ok(rules)
