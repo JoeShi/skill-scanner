@@ -12,6 +12,8 @@ pub mod r4;
 pub mod r5;
 pub mod r6;
 pub mod r7;
+pub mod r8;
+pub mod r9;
 
 pub trait Rule: Send + Sync {
     fn id(&self) -> &RuleId;
