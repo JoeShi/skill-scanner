@@ -1,4 +1,4 @@
-use skill_scanner_manifest::{validate_manifest_structure, SkillManifest, InstallerConfig};
+use skill_scanner_manifest::{validate_manifest_structure, InstallerConfig, SkillManifest};
 use std::collections::HashMap;
 
 fn full_valid_manifest() -> SkillManifest {
@@ -24,7 +24,11 @@ fn full_valid_manifest() -> SkillManifest {
 #[test]
 fn ac15_valid_manifest_no_errors() {
     let errors = validate_manifest_structure(&full_valid_manifest());
-    assert!(errors.is_empty(), "expected no errors for valid manifest, got: {:?}", errors);
+    assert!(
+        errors.is_empty(),
+        "expected no errors for valid manifest, got: {:?}",
+        errors
+    );
 }
 
 // AC16: missing required fields → each one reported
@@ -49,19 +53,23 @@ fn ac16_missing_required_fields_all_reported() {
     let errors = validate_manifest_structure(&m);
     assert!(
         errors.iter().any(|e| e.contains("description")),
-        "expected missing-description error, got: {:?}", errors
+        "expected missing-description error, got: {:?}",
+        errors
     );
     assert!(
         errors.iter().any(|e| e.contains("main")),
-        "expected missing-main error, got: {:?}", errors
+        "expected missing-main error, got: {:?}",
+        errors
     );
     assert!(
         errors.iter().any(|e| e.contains("author")),
-        "expected missing-author error, got: {:?}", errors
+        "expected missing-author error, got: {:?}",
+        errors
     );
     assert!(
         errors.iter().any(|e| e.contains("license")),
-        "expected missing-license error, got: {:?}", errors
+        "expected missing-license error, got: {:?}",
+        errors
     );
 }
 
@@ -74,8 +82,11 @@ fn ac17_invalid_semver_reported() {
     };
     let errors = validate_manifest_structure(&m);
     assert!(
-        errors.iter().any(|e| e.contains("semver") || e.contains("version") || e.contains("not-semver")),
-        "expected semver error, got: {:?}", errors
+        errors
+            .iter()
+            .any(|e| e.contains("semver") || e.contains("version") || e.contains("not-semver")),
+        "expected semver error, got: {:?}",
+        errors
     );
 }
 
@@ -97,7 +108,10 @@ fn ac18_valid_installer_and_env_no_extra_errors() {
     // installer.type as string is valid; env as HashMap<String,String> is valid
     // Only required-field or semver errors are allowed; no installer/env shape errors
     assert!(
-        !errors.iter().any(|e| e.contains("installer") || e.contains("env")),
-        "unexpected installer/env errors: {:?}", errors
+        !errors
+            .iter()
+            .any(|e| e.contains("installer") || e.contains("env")),
+        "unexpected installer/env errors: {:?}",
+        errors
     );
 }

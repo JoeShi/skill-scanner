@@ -59,7 +59,11 @@ fn ac22_manifest_json_normalized() {
 
     let m = parse_manifest(dir.path()).expect("must succeed");
     assert_eq!(m.version, "0.0.0", "version must default to 0.0.0");
-    assert_eq!(m.publisher.as_deref(), Some("Carol"), "author must copy to publisher");
+    assert_eq!(
+        m.publisher.as_deref(),
+        Some("Carol"),
+        "author must copy to publisher"
+    );
 }
 
 // AC23: parse_manifest normalizes SKILL.md content
@@ -78,7 +82,15 @@ installer:
     fs::write(&skill_md_path, md).unwrap();
 
     let m = parse_manifest(dir.path()).expect("must succeed");
-    assert_eq!(m.publisher.as_deref(), Some("Dave"), "author must copy to publisher");
+    assert_eq!(
+        m.publisher.as_deref(),
+        Some("Dave"),
+        "author must copy to publisher"
+    );
     let installer = m.installer.expect("installer must be present");
-    assert_eq!(installer.r#type.as_deref(), Some("upper-case"), "installer.type must be lowercased");
+    assert_eq!(
+        installer.r#type.as_deref(),
+        Some("upper-case"),
+        "installer.type must be lowercased"
+    );
 }
