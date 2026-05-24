@@ -209,7 +209,7 @@ fn ac12_require_signature_signed_trusted_ok() {
     let mut wire = [0u8; 96];
     wire[0..64].copy_from_slice(&sig);
     wire[64..96].copy_from_slice(&pk);
-    fs::write(ruleset_dir.join("rules.yml.sig"), &wire).unwrap();
+    fs::write(ruleset_dir.join("rules.yml.sig"), wire).unwrap();
 
     let mut args = clean_args(skill_dir);
     args.rulesets = vec![yaml_path];
