@@ -40,5 +40,7 @@ pub fn builtin_rules() -> Vec<Box<dyn Rule>> {
         Box::new(r9::R9DomainsWildcard::new()),
         Box::new(r10::R10DependencyProtocol::new()),
         Box::new(r11::R11CapabilityWildcard::new()),
+        Box::new(r12::R12MainFieldEscape::new()),
+        Box::new(r13::R13EnvKeyShellInject::new()),
     ]
 }
