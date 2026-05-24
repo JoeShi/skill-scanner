@@ -9,6 +9,7 @@ authors.workspace = true
 [dependencies]
 skill-scanner-core = { path = "../core" }
 skill-scanner-manifest = { path = "../manifest" }
+regex = { workspace = true }
 
 [dev-dependencies]
 tempfile = { workspace = true }

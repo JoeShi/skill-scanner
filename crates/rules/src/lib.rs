@@ -28,5 +28,7 @@ pub fn builtin_rules() -> Vec<Box<dyn Rule>> {
         Box::new(r3::R3InstallerScript::new()),
         Box::new(r4::R4InstallerTypeBlocked::new()),
         Box::new(r5::R5EnvSystemVar::new()),
+        Box::new(r6::R6EnvValueSecrets::new()),
+        Box::new(r7::R7InstallerInlineExec::new()),
     ]
 }

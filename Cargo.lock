@@ -1104,6 +1104,7 @@ dependencies = [
 name = "skill-scanner-rules"
 version = "0.2.0"
 dependencies = [
+ "regex",
  "skill-scanner-core",
  "skill-scanner-manifest",
  "tempfile",
