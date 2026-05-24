@@ -1,10 +1,14 @@
 //! skill-scanner-ruleset — custom ruleset loader and validators
 
 pub mod error;
+pub mod merge;
 pub mod semgrep;
+pub mod trust;
 pub mod validators;
 
 pub use error::RulesetValidationError;
+pub use merge::merge_findings;
+pub use trust::{verify_ruleset_signature, TrustPolicy, TrustedKey};
 pub use validators::reject_template_expansion;
 pub use validators::validate_id_format::{validate_id_format, validate_message_length};
 pub use validators::validate_no_origin_spoof::{custom_origin, validate_no_origin_spoof};
