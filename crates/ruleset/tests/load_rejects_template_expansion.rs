@@ -87,7 +87,8 @@ fn ac13_re_export_compiles() {
 
 #[test]
 fn ac15_only_ruleset_lists_regex() {
-    // Static parse of each crate's Cargo.toml: only ruleset may list regex
+    // Static parse of each crate's Cargo.toml: ruleset and rules may list regex
+    // (rules added in L1.9 when R6-env-value-secrets landed its regex-based secret scan)
     let crates = ["core", "rules", "ruleset", "manifest", "clawhub", "cli"];
     for name in &crates {
         let manifest_path = workspace_root()
@@ -103,8 +104,8 @@ fn ac15_only_ruleset_lists_regex() {
             .unwrap_or(&toml::map::Map::new())
             .clone();
         let has_regex = deps.contains_key("regex");
-        if *name == "ruleset" {
-            assert!(has_regex, "ruleset must list regex");
+        if *name == "ruleset" || *name == "rules" {
+            assert!(has_regex, "{} must list regex", name);
         } else {
             assert!(!has_regex, "{} must not list regex", name);
         }
