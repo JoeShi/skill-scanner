@@ -1105,6 +1105,8 @@ name = "skill-scanner-rules"
 version = "0.2.0"
 dependencies = [
  "skill-scanner-core",
+ "skill-scanner-manifest",
+ "tempfile",
 ]
 
 [[package]]

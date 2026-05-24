@@ -13,5 +13,8 @@ pub trait Rule: Send + Sync {
 }
 
 pub fn builtin_rules() -> Vec<Box<dyn Rule>> {
-    vec![]
+    vec![
+        Box::new(r0::R0ManifestStructure::new()),
+        Box::new(r0::R0MissingCapabilities::new()),
+    ]
 }
