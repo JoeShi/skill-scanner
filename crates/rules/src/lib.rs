@@ -5,6 +5,7 @@ use skill_scanner_manifest::SkillManifest;
 use std::path::Path;
 
 pub mod r0;
+pub mod r1;
 
 pub trait Rule: Send + Sync {
     fn id(&self) -> &RuleId;
