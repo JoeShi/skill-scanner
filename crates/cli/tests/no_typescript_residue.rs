@@ -10,12 +10,10 @@ fn workspace_root() -> PathBuf {
         .to_path_buf()
 }
 
-use std::path::Path;
-
 #[test]
 fn ac16_no_package_json_at_root() {
     assert!(
-        !Path::new("package.json").exists(),
+        !workspace_root().join("package.json").exists(),
         "package.json must not exist at repo root"
     );
 }
@@ -23,7 +21,7 @@ fn ac16_no_package_json_at_root() {
 #[test]
 fn ac16_no_node_modules() {
     assert!(
-        !Path::new("node_modules").exists(),
+        !workspace_root().join("node_modules").exists(),
         "node_modules must not exist at repo root"
     );
 }

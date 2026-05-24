@@ -1,5 +1,15 @@
 use skill_scanner_ruleset::RulesetValidationError;
 use std::io::Write;
+use std::path::PathBuf;
+
+fn workspace_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .unwrap()
+        .parent()
+        .unwrap()
+        .to_path_buf()
+}
 
 #[test]
 fn ac7_whole_ruleset_aborts_on_single_rejection() {
@@ -24,14 +34,37 @@ fn ac7_whole_ruleset_aborts_on_single_rejection() {
 
 #[test]
 fn ac10_no_io_in_validator_dep_closure() {
-    // We verify by checking that the validator function signature has no async / no fs / no net
-    // This is a compile-time / signature check
+    // Compile-time signature check: validator is a pure Fn, not async
     fn check_pure_fn<F>(_f: F)
     where
         F: Fn(&skill_scanner_ruleset::semgrep::SemgrepRule) -> Result<(), RulesetValidationError>,
     {
     }
     check_pure_fn(skill_scanner_ruleset::reject_template_expansion);
+
+    // Source-text grep: validator file must NOT contain forbidden I/O patterns
+    let validator_path = workspace_root()
+        .join("crates")
+        .join("ruleset")
+        .join("src")
+        .join("validators")
+        .join("reject_template_expansion.rs");
+    let src = std::fs::read_to_string(&validator_path)
+        .unwrap_or_else(|e| panic!("failed to read validator source: {}", e));
+    let forbidden = [
+        "std::fs",
+        "std::net",
+        "std::process",
+        "tokio::",
+        "reqwest::",
+    ];
+    for pat in &forbidden {
+        assert!(
+            !src.contains(pat),
+            "validator source must not contain '{}': found forbidden I/O pattern",
+            pat
+        );
+    }
 }
 
 #[test]
@@ -54,13 +87,26 @@ fn ac13_re_export_compiles() {
 
 #[test]
 fn ac15_only_ruleset_lists_regex() {
-    // Verified by cargo tree in dep_graph.rs (AC14 covers reqwest/tokio)
-    // Here we just verify regex is used by the validator
-    let r = skill_scanner_ruleset::semgrep::SemgrepRule {
-        id: "r-test".to_string(),
-        message: "${X}".to_string(),
-        _rest: serde_yaml::Value::Null,
-    };
-    let err = skill_scanner_ruleset::reject_template_expansion(&r).unwrap_err();
-    assert_eq!(err.code(), "RULESET_C5_TEMPLATE_EXPANSION");
+    // Static parse of each crate's Cargo.toml: only ruleset may list regex
+    let crates = ["core", "rules", "ruleset", "manifest", "clawhub", "cli"];
+    for name in &crates {
+        let manifest_path = workspace_root()
+            .join("crates")
+            .join(name)
+            .join("Cargo.toml");
+        let content = std::fs::read_to_string(&manifest_path)
+            .unwrap_or_else(|e| panic!("failed to read {} Cargo.toml: {}", name, e));
+        let doc: toml::Table = content.parse().expect("valid toml");
+        let deps = doc
+            .get("dependencies")
+            .and_then(|d| d.as_table())
+            .unwrap_or(&toml::map::Map::new())
+            .clone();
+        let has_regex = deps.contains_key("regex");
+        if *name == "ruleset" {
+            assert!(has_regex, "ruleset must list regex");
+        } else {
+            assert!(!has_regex, "{} must not list regex", name);
+        }
+    }
 }
