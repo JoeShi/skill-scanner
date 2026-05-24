@@ -6,6 +6,8 @@ pub mod validators;
 
 pub use error::RulesetValidationError;
 pub use validators::reject_template_expansion;
+pub use validators::validate_id_format::{validate_id_format, validate_message_length};
+pub use validators::validate_no_origin_spoof::{custom_origin, validate_no_origin_spoof};
 
 use std::path::Path;
 
