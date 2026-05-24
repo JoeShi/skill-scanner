@@ -36,5 +36,7 @@ pub fn builtin_rules() -> Vec<Box<dyn Rule>> {
         Box::new(r7::R7InstallerInlineExec::new()),
         Box::new(r8::R8FsPathsEscape::new()),
         Box::new(r9::R9DomainsWildcard::new()),
+        Box::new(r10::R10DependencyProtocol::new()),
+        Box::new(r11::R11CapabilityWildcard::new()),
     ]
 }
