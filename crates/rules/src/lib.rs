@@ -6,6 +6,8 @@ use std::path::Path;
 
 pub mod r0;
 pub mod r1;
+pub mod r10;
+pub mod r11;
 pub mod r2;
 pub mod r3;
 pub mod r4;
