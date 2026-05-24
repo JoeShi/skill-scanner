@@ -1093,8 +1093,10 @@ name = "skill-scanner-manifest"
 version = "0.2.0"
 dependencies = [
  "serde",
+ "serde_json",
  "serde_yaml",
  "skill-scanner-core",
+ "tempfile",
  "thiserror 1.0.69",
 ]
 
