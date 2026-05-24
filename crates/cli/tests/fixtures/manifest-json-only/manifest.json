@@ -1,0 +1,5 @@
+{
+  "name": "json-only-skill",
+  "version": "1.0.0",
+  "capabilities": [{"resource": "network", "scope": "read"}]
+}

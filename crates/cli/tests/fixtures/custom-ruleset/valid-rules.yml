@@ -1,0 +1,4 @@
+- id: my-custom-rule
+  message: Custom security check placeholder
+  pattern: TODO_PATTERN
+  languages: [python]
