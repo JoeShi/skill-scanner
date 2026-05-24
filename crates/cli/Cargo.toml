@@ -1,0 +1,28 @@
+[package]
+name = "skill-scanner-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "skillchk"
+path = "src/main.rs"
+
+[dependencies]
+skill-scanner-core = { path = "../core" }
+skill-scanner-rules = { path = "../rules" }
+skill-scanner-ruleset = { path = "../ruleset" }
+skill-scanner-manifest = { path = "../manifest" }
+skill-scanner-clawhub = { path = "../clawhub" }
+clap = { workspace = true }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+
+[dev-dependencies]
+toml = { workspace = true }
+serde_json = { workspace = true }
+tempfile = { workspace = true }

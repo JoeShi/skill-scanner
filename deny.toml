@@ -1,0 +1,38 @@
+[graph]
+targets = [
+    { triple = "x86_64-unknown-linux-gnu" },
+    { triple = "aarch64-apple-darwin" },
+]
+
+[advisories]
+version = 2
+yanked = "warn"
+ignore = [
+    # serde_yaml maintainer-yanked; replacement deferred to L1.x
+    { id = "RUSTSEC-2024-0320", reason = "serde_yaml is used at L0; replacement tracked as future L1.x slice" },
+]
+
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "ISC",
+    "Unicode-DFS-2016",
+    "Unicode-3.0",
+    "CDLA-Permissive-2.0",
+]
+
+[bans]
+multiple-versions = "warn"
+wildcards = "warn"
+highlight = "all"
+
+[[bans.deny]]
+name = "openssl-sys"
+reason = "Forbidden per L0 dependency policy; use rustls-tls only"
+
+[[bans.deny]]
+name = "native-tls"
+reason = "Forbidden per L0 dependency policy; use rustls-tls only"

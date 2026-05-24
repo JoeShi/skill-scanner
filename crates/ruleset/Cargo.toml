@@ -1,0 +1,19 @@
+[package]
+name = "skill-scanner-ruleset"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+skill-scanner-core = { path = "../core" }
+serde = { workspace = true }
+serde_yaml = { workspace = true }
+regex = { workspace = true }
+once_cell = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+tempfile = { workspace = true }
