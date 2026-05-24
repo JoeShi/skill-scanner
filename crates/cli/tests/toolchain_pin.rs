@@ -12,12 +12,12 @@ fn workspace_root() -> PathBuf {
 }
 
 #[test]
-fn ac15_rust_toolchain_pins_1_85() {
+fn ac15_rust_toolchain_pins_1_86() {
     let path = workspace_root().join("rust-toolchain.toml");
     let content = fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("failed to read {}: {}", path.display(), e));
     assert!(
-        content.contains("1.85"),
-        "rust-toolchain.toml must pin 1.85"
+        content.contains("1.86"),
+        "rust-toolchain.toml must pin 1.86"
     );
 }
