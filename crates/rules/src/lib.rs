@@ -32,5 +32,7 @@ pub fn builtin_rules() -> Vec<Box<dyn Rule>> {
         Box::new(r5::R5EnvSystemVar::new()),
         Box::new(r6::R6EnvValueSecrets::new()),
         Box::new(r7::R7InstallerInlineExec::new()),
+        Box::new(r8::R8FsPathsEscape::new()),
+        Box::new(r9::R9DomainsWildcard::new()),
     ]
 }
