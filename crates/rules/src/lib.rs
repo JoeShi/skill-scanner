@@ -17,5 +17,6 @@ pub fn builtin_rules() -> Vec<Box<dyn Rule>> {
     vec![
         Box::new(r0::R0ManifestStructure::new()),
         Box::new(r0::R0MissingCapabilities::new()),
+        Box::new(r1::R1SensitiveEnvKey::new()),
     ]
 }
