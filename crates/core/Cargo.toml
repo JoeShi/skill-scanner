@@ -1,0 +1,17 @@
+[package]
+name = "skill-scanner-core"
+version = "1.0.0"
+edition = "2021"
+description = "Core library for skill-scanner: static analysis of agent skill marketplaces"
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+serde_yaml = { workspace = true }
+regex = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+walkdir = { workspace = true }
+thiserror = { workspace = true }
+colored = { workspace = true }
+url = "2"
