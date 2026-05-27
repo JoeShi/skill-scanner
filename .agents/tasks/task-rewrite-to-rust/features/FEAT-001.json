@@ -2,7 +2,7 @@
   "id": "FEAT-001",
   "type": "feat",
   "description": "Set up Cargo workspace and implement the core library crate with all types, manifest parser, scanner modules (R0-R13), finding-merge (C3), ruleset-loader (C1/C2), and reporters (terminal, json, markdown, sarif). This is the bulk of the rewrite - porting packages/core/ to Rust.",
-  "status": "in_progress",
+  "status": "completed",
   "steps": [
     "Create Cargo.toml at workspace root (/projects/sandbox/skill-scanner/Cargo.toml) defining a workspace with members = ['crates/core', 'crates/cli']. Add workspace-level dependencies: serde, serde_json, serde_yaml, regex, uuid, chrono, walkdir, clap, reqwest, tokio, thiserror, colored.",
     "Create crates/core/Cargo.toml for the skill-scanner-core library crate with dependencies: serde, serde_json, serde_yaml, regex, uuid, chrono, walkdir, thiserror.",
@@ -35,5 +35,5 @@
     "cargo clippy -p skill-scanner-core -- -D warnings"
   ],
   "blocked_reason": null,
-  "findings": ""
+  "findings": "All verification steps pass: cargo build, cargo test (32 tests), cargo clippy -D warnings (no warnings). The url crate was added as an additional dependency for host extraction in the network_diff module. The ClawHub adapter HTTP fetch is stubbed since reqwest is not a core dependency - the CLI crate will provide the actual HTTP implementation via reqwest."
 }
