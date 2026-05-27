@@ -1,0 +1,13 @@
+[package]
+name = "skillchk"
+version = "1.0.0"
+edition = "2021"
+description = "CLI for skill-scanner: scan agent skill marketplaces for security risks"
+
+[[bin]]
+name = "skillchk"
+path = "src/main.rs"
+
+[dependencies]
+skill-scanner-core = { path = "../core" }
+clap = { workspace = true }

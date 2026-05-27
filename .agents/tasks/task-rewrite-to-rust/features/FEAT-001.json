@@ -1,0 +1,39 @@
+{
+  "id": "FEAT-001",
+  "type": "feat",
+  "description": "Set up Cargo workspace and implement the core library crate with all types, manifest parser, scanner modules (R0-R13), finding-merge (C3), ruleset-loader (C1/C2), and reporters (terminal, json, markdown, sarif). This is the bulk of the rewrite - porting packages/core/ to Rust.",
+  "status": "in_progress",
+  "steps": [
+    "Create Cargo.toml at workspace root (/projects/sandbox/skill-scanner/Cargo.toml) defining a workspace with members = ['crates/core', 'crates/cli']. Add workspace-level dependencies: serde, serde_json, serde_yaml, regex, uuid, chrono, walkdir, clap, reqwest, tokio, thiserror, colored.",
+    "Create crates/core/Cargo.toml for the skill-scanner-core library crate with dependencies: serde, serde_json, serde_yaml, regex, uuid, chrono, walkdir, thiserror.",
+    "Create crates/core/src/lib.rs as the library entry point, re-exporting all public modules.",
+    "Create crates/core/src/types.rs implementing all core types: Severity (P0/P1/P2 enum), Tier (blocker/suggestion/nit enum), CriticalTag enum, ThreatCategory enum, RuleOrigin enum, ScanFinding struct, SkillManifest struct, CapabilityDeclaration struct, ScanContext struct, ScanResult struct, ScannerModule trait (with fn scan(&self, ctx: &ScanContext) -> Vec<ScanFinding>), RulesetTrustPolicy enum, RulesetMeta struct. All structs derive Serialize/Deserialize/Clone/Debug.",
+    "Create crates/core/src/manifest.rs implementing: parse_manifest(skill_path) -> Result<SkillManifest>, parse_manifest_with_raw(skill_path) -> Result<(SkillManifest, String)>, normalize_manifest(manifest) -> SkillManifest, parse_skill_md_frontmatter(content, skill_path) -> SkillManifest, validate_manifest_structure(manifest) -> Vec<String>, extract_declared_capabilities(manifest) -> HashMap, extract_declared_domains(manifest) -> HashSet. Port the YAML frontmatter regex extraction and all normalization logic from the TS version.",
+    "Create crates/core/src/engine.rs implementing ScannerEngine with register(module), scan(skill_path) -> Result<ScanResult>. Port the collect_source_files walker (using walkdir crate, ignoring node_modules/.git/dist/build/coverage/.quickwork). Implement create_default_engine() factory that registers all scanner modules.",
+    "Create crates/core/src/modules/mod.rs and individual module files: manifest_validation.rs, network_diff.rs, fs_diff.rs, process_spawn.rs, dangerous_api.rs, secrets_scan.rs, narrow_waist_bypass.rs, sbom_cve.rs. Each implements the ScannerModule trait. Port all regex patterns and detection logic from the TS counterparts. The sbom_cve module should shell out to 'npm audit --json' (same as TS version) using std::process::Command.",
+    "Create crates/core/src/finding_merge.rs implementing merge_findings(core, customs) -> Vec<MergedFinding> and decide_from_findings(findings) -> Decision. Port the severity-asymmetry guarantee (C3), the identity-key grouping, and all defensive guards (reject custom claiming core origin, etc.).",
+    "Create crates/core/src/ruleset_loader.rs implementing validate_ruleset(input, source) -> Result<Ruleset> and origin_for_load(opts) -> RuleOrigin. Port the C1 schema validation (rule ID regex, message length cap, strict unknown-field rejection, tier/severity enum validation) and C2 origin stamping. Use serde for deserialization with deny_unknown_fields.",
+    "Create crates/core/src/reporter/mod.rs, terminal.rs, json.rs, markdown.rs, sarif.rs. Each implements a Reporter trait with fn render(&self, result: &ScanResult) -> String. Port the terminal colored output (using colored crate), JSON (serde_json::to_string_pretty), markdown table format, and SARIF 2.1.0 schema output.",
+    "Create crates/core/src/formatter.rs implementing format_finding(), format_report(), is_blocked(), requires_acceptance() - the legacy formatter functions.",
+    "Create crates/core/src/marketplace/mod.rs, types.rs, registry.rs, local_adapter.rs, skills_sh_adapter.rs, clawhub_adapter.rs. Define MarketplaceSource trait (can_handle, fetch), FetchedSkill struct, MarketplaceRegistry. Port the local adapter (sync fs ops), skills-sh adapter (git clone via Command), and ClawHub adapter (HTTP via reqwest with redirect following, max 5 redirects).",
+    "Add unit tests in each module file using #[cfg(test)] mod tests. Port key test cases from the TS test files: manifest normalization tests, finding-merge C3 tests (severity asymmetry, adversarial custom rule rejection), ruleset-loader C1/C2 tests (valid/invalid rulesets, origin stamping).",
+    "Copy the existing test fixtures directory (packages/core/src/tests/fixtures/) to crates/core/tests/fixtures/ so integration tests can reference them."
+  ],
+  "acceptance_criteria": [
+    "cargo build -p skill-scanner-core compiles without errors",
+    "cargo test -p skill-scanner-core passes all unit tests",
+    "cargo clippy -p skill-scanner-core -- -D warnings shows no warnings",
+    "The core crate exports all public types and functions needed by the CLI crate",
+    "All scanner modules (R0-R13) are implemented with regex patterns matching the TS originals",
+    "Finding merge correctly enforces C3 severity asymmetry (custom cannot downgrade core)",
+    "Ruleset loader validates C1 schema constraints and stamps C2 origins",
+    "All four reporters produce correct output format"
+  ],
+  "verification": [
+    "cargo build -p skill-scanner-core",
+    "cargo test -p skill-scanner-core",
+    "cargo clippy -p skill-scanner-core -- -D warnings"
+  ],
+  "blocked_reason": null,
+  "findings": ""
+}
