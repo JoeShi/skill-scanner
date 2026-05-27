@@ -127,6 +127,8 @@ impl ScannerModule for DangerousApiModule {
 
             for pattern in &patterns {
                 for m in pattern.regex.find_iter(&content) {
+                    let byte_offset = m.start();
+                    let line_number = content[..byte_offset].matches('\n').count() as u32 + 1;
                     let evidence = &m.as_str()[..m.as_str().len().min(80)];
                     findings.push(ScanFinding {
                         rule_id: pattern.rule_id.to_string(),
@@ -135,7 +137,7 @@ impl ScannerModule for DangerousApiModule {
                         critical_tag: Some(CriticalTag::Security),
                         message: pattern.message.to_string(),
                         file: Some(rel_path.clone()),
-                        line: None,
+                        line: Some(line_number),
                         column: None,
                         category: pattern.category.clone(),
                         evidence: Some(evidence.to_string()),

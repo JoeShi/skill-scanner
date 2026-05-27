@@ -59,6 +59,18 @@ fn js_bypass_patterns() -> Vec<BypassPattern> {
             rule_id: "R5-direct-capability-registry-write",
             recommendation: "Use @quickport/orchestrator/capability-registry/* API",
         },
+        BypassPattern {
+            regex: Regex::new(r"writeFile(?:Sync)?\(`\$\{[^}]*\}/\.quickwork/mcp_config\.json`").unwrap(),
+            message: "Dynamic mcp_config.json path write (bypass quick-config-patcher)",
+            rule_id: "R5-direct-quick-config-write",
+            recommendation: "Use @quickport/orchestrator/quick-config-patcher/* API",
+        },
+        BypassPattern {
+            regex: Regex::new(r"writeFile(?:Sync)?\(`\$\{[^}]*\}/quickport/state/capability-registry\.json`").unwrap(),
+            message: "Dynamic capability-registry.json path write (bypass capability-registry)",
+            rule_id: "R5-direct-capability-registry-write",
+            recommendation: "Use @quickport/orchestrator/capability-registry/* API",
+        },
     ]
 }
 
@@ -113,6 +125,8 @@ impl ScannerModule for NarrowWaistBypassModule {
 
             for pattern in &js_patterns {
                 for m in pattern.regex.find_iter(&content) {
+                    let byte_offset = m.start();
+                    let line_number = content[..byte_offset].matches('\n').count() as u32 + 1;
                     let evidence = &m.as_str()[..m.as_str().len().min(80)];
                     findings.push(ScanFinding {
                         rule_id: pattern.rule_id.to_string(),
@@ -121,7 +135,7 @@ impl ScannerModule for NarrowWaistBypassModule {
                         critical_tag: Some(CriticalTag::Security),
                         message: pattern.message.to_string(),
                         file: Some((*rel_path).clone()),
-                        line: None,
+                        line: Some(line_number),
                         column: None,
                         category: ThreatCategory::PrivilegeEscalation,
                         evidence: Some(evidence.to_string()),
@@ -143,6 +157,8 @@ impl ScannerModule for NarrowWaistBypassModule {
 
             for pattern in &py_patterns_list {
                 for m in pattern.regex.find_iter(&content) {
+                    let byte_offset = m.start();
+                    let line_number = content[..byte_offset].matches('\n').count() as u32 + 1;
                     let evidence = &m.as_str()[..m.as_str().len().min(80)];
                     findings.push(ScanFinding {
                         rule_id: pattern.rule_id.to_string(),
@@ -151,7 +167,7 @@ impl ScannerModule for NarrowWaistBypassModule {
                         critical_tag: Some(CriticalTag::Security),
                         message: pattern.message.to_string(),
                         file: Some((*rel_path).clone()),
-                        line: None,
+                        line: Some(line_number),
                         column: None,
                         category: ThreatCategory::PrivilegeEscalation,
                         evidence: Some(evidence.to_string()),

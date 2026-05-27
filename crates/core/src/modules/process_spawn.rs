@@ -57,6 +57,8 @@ impl ScannerModule for ProcessSpawnModule {
 
             for pattern in patterns {
                 for m in pattern.find_iter(&content) {
+                    let byte_offset = m.start();
+                    let line_number = content[..byte_offset].matches('\n').count() as u32 + 1;
                     findings.push(ScanFinding {
                         rule_id: "R3-process-spawn-diff".to_string(),
                         tier: Tier::Blocker,
@@ -64,7 +66,7 @@ impl ScannerModule for ProcessSpawnModule {
                         critical_tag: Some(CriticalTag::Security),
                         message: format!("Process spawn detected: {}", m.as_str().trim()),
                         file: Some(rel_path.clone()),
-                        line: None,
+                        line: Some(line_number),
                         column: None,
                         category: ThreatCategory::MaliciousCode,
                         evidence: Some(m.as_str().trim().to_string()),
